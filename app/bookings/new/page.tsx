@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ReservationForm } from '@/components/ReservationForm'
 import { CallTranscript } from '@/components/CallTranscript'
 import { BookingStatus } from '@/types'
+import { makeReservationCall } from '@/services/retellAI'
 
 export default function NewBooking() {
     const [bookingStatus, setBookingStatus] = useState<BookingStatus>('form')
@@ -12,12 +13,11 @@ export default function NewBooking() {
     const handleSubmit = async (formData: any) => {
         try {
             setBookingStatus('calling')
-            // TODO: Implement Retell.ai API call
-            // Mock response for now
-            await new Promise(resolve => setTimeout(resolve, 2000))
-            setTranscript('Mock transcript of the call...')
+            const callTranscript = await makeReservationCall(formData.restaurantPhone, formData.reservationDetails)
+            setTranscript(callTranscript.transcript)
             setBookingStatus('completed')
         } catch (error) {
+            console.error('Error making reservation call:', error)
             setBookingStatus('error')
         }
     }
