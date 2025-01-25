@@ -10,7 +10,7 @@ export default function NewBooking() {
     const [bookingStatus, setBookingStatus] = useState<BookingStatus>('form')
     const [transcript, setTranscript] = useState<string>('')
 
-    const handleSubmit = async (formData: any) => {
+    const handleSubmit = async (formData) => {
         try {
             setBookingStatus('calling')
             const callTranscript = await makeReservationCall(formData.restaurantPhone, formData.reservationDetails)
