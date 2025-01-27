@@ -19,6 +19,7 @@ export function ReservationForm({ onSubmit }: Props) {
         date: '2025-01-26',
         timeRange: '6:30 PM - 7:30 PM',
         additionalNotes: '',
+        restaurantName: 'Taqueria La Fiesta'
     })
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -57,6 +58,16 @@ export function ReservationForm({ onSubmit }: Props) {
                         onChange={(e) => setFormData({ ...formData, restaurantPhone: e.target.value })}
                     />
                 </div>
+                <div>
+                    <label className="block text-sm font-medium mb-1">Restaurant Name</label>
+                    <Input
+                        required
+                        type="text"
+                        value={formData.restaurantName}
+                        onChange={(e) => setFormData({ ...formData, restaurantName: e.target.value })}
+                    />
+                </div>
+
 
                 <div>
                     <label className="block text-sm font-medium mb-1">Party Size</label>

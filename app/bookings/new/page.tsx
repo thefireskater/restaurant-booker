@@ -3,19 +3,30 @@
 import { useState } from 'react'
 import { ReservationForm } from '@/components/ReservationForm'
 import { CallTranscript } from '@/components/CallTranscript'
-import { BookingStatus } from '@/types'
+import { BookingStatus, CallResults, Transcript } from '@/types'
 import { makeReservationCall } from '@/services/retellAI'
-
+import { ReservationFormData } from '@/types'
+import { CallResultsView } from '@/components/CallResults'
 export default function NewBooking() {
     const [bookingStatus, setBookingStatus] = useState<BookingStatus>('form')
-    const [transcript, setTranscript] = useState<string>('')
+    const [transcript, setTranscript] = useState<Transcript>([{ role: 'user', content: 'Hello' }])
+    const [callResults, setCallResults] = useState<CallResults | null>(null)
 
-    const handleSubmit = async (formData) => {
+    const handleSubmit = async (formData: ReservationFormData) => {
         try {
             setBookingStatus('calling')
-            const callTranscript = await makeReservationCall(formData.restaurantPhone, formData.reservationDetails)
-            setTranscript(callTranscript.transcript)
-            setBookingStatus('completed')
+
+            await makeReservationCall({
+                formData,
+                updateTranscript: setTranscript,
+                onCallEnd: () => {
+                    setBookingStatus('completed')
+                },
+                onCallStart: () => {
+                    setBookingStatus('calling')
+                },
+                setCallResults: setCallResults
+            })
         } catch (error) {
             console.error('Error making reservation call:', error)
             setBookingStatus('error')
@@ -32,12 +43,20 @@ export default function NewBooking() {
                 )}
 
                 {bookingStatus !== 'form' && (
-                    <CallTranscript
-                        status={bookingStatus}
-                        transcript={transcript}
-                        onRetry={() => setBookingStatus('form')}
-                    />
+                    <>
+                        <CallTranscript
+                            status={bookingStatus}
+                            transcript={transcript}
+                            onRetry={() => setBookingStatus('form')}
+                        />
+                        <CallResultsView
+                            status={bookingStatus}
+                            results={callResults}
+                            onRetry={() => setBookingStatus('form')}
+                        />
+                    </>
                 )}
+
             </div>
         </main>
     )

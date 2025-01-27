@@ -7,5 +7,15 @@ export interface ReservationFormData {
     partySize: number
     date: string
     timeRange: string
-    additionalNotes?: string
-} 
+    additionalNotes?: string,
+    restaurantName: string
+}
+
+export type Transcript = {
+    role: string
+    content: string
+}[]
+
+export type CallResults = {
+    reservation_booked: boolean
+}
