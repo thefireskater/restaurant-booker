@@ -3,12 +3,27 @@ import type { Config } from "tailwindcss";
 export default {
     darkMode: ["class"],
     content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+		'./pages/**/*.{ts,tsx}',
+		'./components/**/*.{ts,tsx}',
+		'./app/**/*.{ts,tsx}',
+		'./src/**/*.{ts,tsx}',
   ],
   theme: {
+	container: {
+		center: true,
+		padding: "2rem",
+		screens: {
+		  "2xl": "1400px",
+		},
+	  },
   	extend: {
+		screens: {
+			'sm': '640px',    // Small devices (phones)
+			'md': '768px',    // Medium devices (tablets)
+			'lg': '1024px',   // Large devices (laptops)
+			'xl': '1280px',   // Extra large devices
+			'2xl': '1536px',  // 2X large devices
+		  },
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
