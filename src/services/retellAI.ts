@@ -1,22 +1,35 @@
 import Retell from 'retell-sdk';
 
 const RETELL_API_KEY = process.env.NEXT_PUBLIC_RETELL_API_KEY;
-const AGENT_ID = 'agent_c49179b8a643f5ecb9b73dd274';
+const AGENT_ID = 'agent_abb0513f269b3a4dfc6b6a8ec1';
 
 import { RetellWebClient } from "retell-client-js-sdk";
 
 
-
+import { CallResults, ReservationFormData, Transcript } from '@/types'
+import { PhoneCallResponse } from 'retell-sdk/resources/call.mjs';
 
 interface RetellResponse {
     transcript: string;
     success: boolean;
 }
 
-export async function makeReservationCall(
-    restaurantPhone: string,
-    reservationDetails: string
-): Promise<RetellResponse> {
+
+
+export async function makeReservationCall({
+    formData,
+    updateTranscript,
+    onCallEnd,
+    onCallStart,
+    setCallResults
+}: {
+    formData: ReservationFormData,
+    updateTranscript: (transcript: Transcript) => void,
+    onCallEnd: () => void,
+    onCallStart: () => void,
+    setCallResults: (callResults: CallResults) => void
+}
+) {
     if (!RETELL_API_KEY) {
         throw new Error('Retell API key is not configured');
     }
@@ -25,7 +38,7 @@ export async function makeReservationCall(
 
 
 
-    console.log('makeReservationCall', restaurantPhone, reservationDetails);
+    console.log('makeReservationCall', formData);
     try {
         // Initialize Retell client
         const retellClient = new Retell({
@@ -33,35 +46,67 @@ export async function makeReservationCall(
         });
 
         // Make the outbound call
-        const call = await retellClient.call.createWebCall({
-            agent_id: AGENT_ID,
+
+        // const call = await retellClient.call.createWebCall({
+        //     agent_id: AGENT_ID,
+        //     retell_llm_dynamic_variables: {
+        //         name: formData.name,
+        //         party_size: formData.partySize.toString(),
+        //         date: formData.date,
+        //         time_range: formData.timeRange,
+        //         additional_notes: formData.additionalNotes,
+        //         restaurant_name: formData.restaurantName
+        //     }
+        // });
+
+
+        // await retellWebClient.startCall({
+        //     accessToken: call.access_token,
+        // });
+
+
+        // renderCallLogs(retellWebClient, {
+        //     updateTranscript,
+        //     onCallEnd,
+        //     onCallStart
+        // });
+
+
+        const call = await retellClient.call.createPhoneCall({
+            from_number: "+16504594509",
+            to_number: "+12162622772", //TODO: formData.restaurantPhone",
             retell_llm_dynamic_variables: {
-                reservation_details: reservationDetails
+                name: formData.name,
+                party_size: formData.partySize.toString(),
+                date: formData.date,
+                time_range: formData.timeRange,
+                additional_notes: formData.additionalNotes,
+                restaurant_name: formData.restaurantName
             }
-        });
+        })
+
+        onCallStart();
+
+        // // Get call details including transcript
+        const interval = setInterval(async () => {
+            const callResponse = await retellClient.call.retrieve(call.call_id);
 
 
-        await retellWebClient.startCall({
-            accessToken: call.access_token,
-        });
 
 
+            if (callResponse.call_status === 'ended') {
 
+                setCallResults(callResponse.call_analysis?.custom_analysis_data as CallResults);
+                updateTranscript(callResponse.transcript_object || []);
+                clearInterval(interval);
+                onCallEnd();
+            }
+            if (callResponse.call_status === 'error') {
+                clearInterval(interval);
+                onCallEnd();
+            }
+        }, 5000);
 
-        renderCallLogs(retellWebClient);
-
-        console.log('makeReservationCall:createWebCall', call);
-
-        // Wait for call to complete (you might want to implement webhook handling instead)
-        await new Promise(resolve => setTimeout(resolve, 30000));
-
-        // Get call details including transcript
-        const callResponse = await retellClient.call.retrieve(call.call_id);
-
-        return {
-            transcript: callResponse.transcript || 'No transcript available',
-            success: true
-        };
     } catch (error) {
         console.error('Retell AI API error:', error);
         throw error;
@@ -69,14 +114,26 @@ export async function makeReservationCall(
 }
 
 
-const renderCallLogs = async (retellWebClient: RetellWebClient) => {
+const renderCallLogs = async (retellWebClient: RetellWebClient,
+
+    {
+        updateTranscript,
+        onCallEnd,
+        onCallStart
+    }: {
+        updateTranscript: (transcript: Transcript) => void,
+        onCallEnd: () => void,
+        onCallStart: () => void
+    }
+) => {
     retellWebClient.on("call_started", () => {
         console.log("call started");
+        onCallStart();
     });
 
     retellWebClient.on("call_ended", () => {
         console.log("call ended");
-        // setIsCallActive(false);
+        onCallEnd();
     });
 
     // When agent starts talking for the utterance
@@ -93,18 +150,20 @@ const renderCallLogs = async (retellWebClient: RetellWebClient) => {
 
     // Real time pcm audio bytes being played back, in format of Float32Array
     // only available when emitRawAudioSamples is true
-    retellWebClient.on("audio", (audio) => {
+
+    retellWebClient.on("audio", () => {
         // console.log(audio);
     });
 
     // Update message such as transcript
     // You can get transcrit with update.transcript
     // Please note that transcript only contains last 5 sentences to avoid the payload being too large
-    retellWebClient.on("update", (update) => {
-        // console.log(update);
+    retellWebClient.on("update", (update: { type: string, transcript: Transcript }) => {
+        console.log('update', update);
+        updateTranscript(update.transcript);
     });
 
-    retellWebClient.on("metadata", (metadata) => {
+    retellWebClient.on("metadata", () => {
         // console.log(metadata);
     });
 

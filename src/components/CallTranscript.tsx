@@ -1,9 +1,9 @@
-import { BookingStatus } from '@/types'
+import { BookingStatus, Transcript } from '@/types'
 import { Button } from '@/components/ui/button'
 
 interface Props {
     status: BookingStatus
-    transcript: string
+    transcript: Transcript
     onRetry: () => void
 }
 
@@ -17,14 +17,17 @@ export function CallTranscript({ status, transcript, onRetry }: Props) {
                 </div>
             )}
 
-            {status === 'completed' && (
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h2 className="text-xl font-semibold mb-4">Call Transcript</h2>
-                    <div className="whitespace-pre-wrap text-gray-600">
-                        {transcript}
-                    </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-md">
+                <h2 className="text-xl font-semibold mb-4">Call Transcript</h2>
+                <div className="whitespace-pre-wrap text-gray-600">
+                    {transcript.map((item, index) => (
+                        <div key={index}>
+                            <span className="font-bold">{item.role}:</span> {item.content}
+                        </div>
+                    ))}
                 </div>
-            )}
+            </div>
 
             {status === 'error' && (
                 <div className="text-center py-8">
